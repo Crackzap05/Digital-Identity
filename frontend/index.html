@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Credential Desk — Permissioned Digital Identity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --ink:#16201c; --paper:#f2efe6; --card:#fbfaf6; --rule:#cfc9b8;
+    --seal:#1d5d4e; --seal-soft:#e1ece7; --alarm:#8c2f22; --alarm-soft:#f4e3df;
+    --pending:#8a6a1f; --pending-soft:#f3ebd6; --muted:#5f6b64;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *,*::before,*::after{box-sizing:inherit}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:400 16px/1.55 "IBM Plex Sans",system-ui,sans-serif;
+  }
+  header{border-bottom:1px solid var(--rule); padding:26px 22px 20px}
+  .wrap{max-width:980px; margin:0 auto}
+  h1{
+    font:600 clamp(26px,4.4vw,38px)/1.1 "Newsreader",Georgia,serif;
+    margin:0 0 4px; letter-spacing:-.01em;
+  }
+  header p{margin:0; color:var(--muted); font-size:14px; max-width:60ch}
+  nav{display:flex; gap:2px; flex-wrap:wrap; margin-top:20px}
+  nav button{
+    font:500 14px/1 "IBM Plex Sans",sans-serif; padding:10px 15px;
+    background:transparent; border:1px solid transparent; border-bottom:2px solid transparent;
+    color:var(--muted); cursor:pointer; border-radius:3px 3px 0 0;
+  }
+  nav button:hover{color:var(--ink)}
+  nav button[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--seal); background:var(--card)}
+  nav button:focus-visible{outline:2px solid var(--seal); outline-offset:2px}
+  main{padding:26px 22px 80px}
+  section[hidden]{display:none}
+  .panel{
+    background:var(--card); border:1px solid var(--rule);
+    border-radius:4px; padding:22px; margin-bottom:18px;
+  }
+  .panel h2{font:600 19px/1.2 "Newsreader",serif; margin:0 0 4px}
+  .panel .lede{color:var(--muted); font-size:14px; margin:0 0 18px; max-width:62ch}
+  .grid{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+  label{display:block; font-size:13px; font-weight:500; margin-bottom:5px}
+  input,select,textarea{
+    width:100%; padding:9px 11px; font:400 14px/1.4 "IBM Plex Sans",sans-serif;
+    background:#fff; border:1px solid var(--rule); border-radius:3px; color:var(--ink);
+  }
+  textarea{font-family:"IBM Plex Mono",monospace; font-size:12.5px; min-height:88px; resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--seal); outline-offset:-1px; border-color:var(--seal)}
+  .actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; align-items:center}
+  button.go{
+    font:500 14px/1 "IBM Plex Sans",sans-serif; padding:11px 18px; cursor:pointer;
+    background:var(--seal); color:#fff; border:1px solid var(--seal); border-radius:3px;
+  }
+  button.go.quiet{background:transparent; color:var(--seal)}
+  button.go.danger{background:var(--alarm); border-color:var(--alarm)}
+  button.go:disabled{opacity:.5; cursor:progress}
+  button.go:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+  .out{
+    font-family:"IBM Plex Mono",monospace; font-size:12.5px; white-space:pre-wrap;
+    word-break:break-word; background:#fff; border:1px solid var(--rule);
+    border-left-width:3px; border-radius:3px; padding:13px; margin-top:16px;
+    max-height:340px; overflow:auto;
+  }
+  .out:empty{display:none}
+  .out.ok{border-left-color:var(--seal)} .out.bad{border-left-color:var(--alarm)}
+  .out.warn{border-left-color:var(--pending)}
+  .verdict{
+    font:600 26px/1 "Newsreader",serif; padding:16px 18px; border-radius:4px;
+    margin-top:18px; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+  }
+  .verdict small{font:400 13px/1.4 "IBM Plex Sans",sans-serif; color:var(--muted)}
+  .verdict.VALID{background:var(--seal-soft); color:var(--seal)}
+  .verdict.REJECTED,.verdict.INVALID,.verdict.NOT_FOUND{background:var(--alarm-soft); color:var(--alarm)}
+  .verdict.UNCONFIRMED,.verdict.EXPIRED{background:var(--pending-soft); color:var(--pending)}
+  .stages{list-style:none; padding:0; margin:14px 0 0; font-size:13.5px}
+  .stages li{display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--rule)}
+  .stages li:last-child{border-bottom:0}
+  .stages b{flex:0 0 132px; font-weight:600}
+  #qr{display:flex; justify-content:center; padding:20px; background:#fff; border:1px solid var(--rule); border-radius:4px; margin-top:16px}
+  #qr:empty{display:none}
+  #scanner{max-width:340px; margin-top:16px}
+  .bar{
+    display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:13px;
+    color:var(--muted); border-top:1px solid var(--rule); padding-top:14px; margin-top:6px;
+  }
+  .chip{
+    font-family:"IBM Plex Mono",monospace; font-size:12px; background:var(--seal-soft);
+    color:var(--seal); padding:3px 8px; border-radius:3px;
+  }
+  .split{display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; margin-top:14px}
+  th,td{text-align:left; padding:8px 10px; border-bottom:1px solid var(--rule)}
+  th{font-weight:600; font-size:12.5px; color:var(--muted)}
+  td.mono{font-family:"IBM Plex Mono",monospace; font-size:12px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <h1>Credential Desk</h1>
+  <p>Registration, issuance, presentation, verification and revocation against a permissioned Hyperledger Fabric ledger.</p>
+  <nav role="tablist">
+    <button role="tab" data-tab="register" aria-selected="true">Register</button>
+    <button role="tab" data-tab="issue" aria-selected="false">Issue</button>
+    <button role="tab" data-tab="wallet" aria-selected="false">Wallet</button>
+    <button role="tab" data-tab="verify" aria-selected="false">Verify</button>
+    <button role="tab" data-tab="revoke" aria-selected="false">Revoke</button>
+    <button role="tab" data-tab="audit" aria-selected="false">Audit</button>
+  </nav>
+  <div class="bar">
+    <span>Session</span>
+    <select id="role" style="width:auto">
+      <option value="issuer">issuer</option>
+      <option value="admin">admin</option>
+      <option value="verifier">verifier</option>
+      <option value="holder">holder</option>
+    </select>
+    <button class="go quiet" id="login">Authenticate</button>
+    <span class="chip" id="session">not signed in</span>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+  <!-- 1. REGISTER -->
+  <section id="register">
+    <div class="panel">
+      <h2>Register an identity</h2>
+      <p class="lede">The issuer verifies the applicant's information out of band, then commits only a SHA-256 digest of it to the ledger. The fields below stay in the off-chain store.</p>
+      <div class="grid">
+        <div><label for="r-id">Identity ID</label><input id="r-id" value="holder-001"></div>
+        <div><label for="r-iss">Issuer ID</label><input id="r-iss" value="ngo-alpha"></div>
+        <div><label for="r-name">Full name <em>(off-chain)</em></label><input id="r-name" value="A. Rahman"></div>
+        <div><label for="r-dob">Date of birth <em>(off-chain)</em></label><input id="r-dob" type="date" value="1994-03-11"></div>
+        <div><label for="r-loc">Registration site <em>(off-chain)</em></label><input id="r-loc" value="Camp 4, Cox's Bazar"></div>
+      </div>
+      <div class="actions"><button class="go" id="r-go">Register on ledger</button></div>
+      <div class="out" id="r-out"></div>
+    </div>
+  </section>
+
+  <!-- 2. ISSUE -->
+  <section id="issue" hidden>
+    <div class="panel">
+      <h2>Issue a credential</h2>
+      <p class="lede">Creates a signed credential, records its hash and ACTIVE status on-chain, and returns a short-lived QR presentation token.</p>
+      <div class="grid">
+        <div><label for="i-holder">Holder ID</label><input id="i-holder" value="holder-001"></div>
+        <div><label for="i-iss">Issuer ID</label><input id="i-iss" value="ngo-alpha"></div>
+        <div><label for="i-type">Credential type</label>
+          <select id="i-type">
+            <option>ProofOfIdentity</option><option>ProofOfResidence</option>
+            <option>VaccinationRecord</option><option>WorkEligibility</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <label for="i-claims">Claims <em>(off-chain body; only its hash is written to the ledger)</em></label>
+        <textarea id="i-claims">{ "nationality": "MM", "familySize": 4, "validUntil": "2027-12-31" }</textarea>
+      </div>
+      <div class="actions"><button class="go" id="i-go">Issue credential</button></div>
+      <div class="out" id="i-out"></div>
+      <div id="qr"></div>
+    </div>
+  </section>
+
+  <!-- 3. WALLET -->
+  <section id="wallet" hidden>
+    <div class="panel">
+      <h2>Holder wallet</h2>
+      <p class="lede">Credentials held by this identity, read back from the ledger. Regenerating a presentation mints a fresh token that expires in five minutes.</p>
+      <div class="grid">
+        <div><label for="w-holder">Holder ID</label><input id="w-holder" value="holder-001"></div>
+      </div>
+      <div class="actions">
+        <button class="go" id="w-go">Load credentials</button>
+        <button class="go quiet" id="w-present">Present first credential</button>
+      </div>
+      <div id="w-table"></div>
+      <div class="out" id="w-out"></div>
+      <div id="w-qr"></div>
+    </div>
+  </section>
+
+  <!-- 4. VERIFY -->
+  <section id="verify" hidden>
+    <div class="panel">
+      <h2>Verify a presentation</h2>
+      <p class="lede">Two independent checks. The local check proves the issuer's signature and works without connectivity. Only the ledger check can see a revocation.</p>
+      <div>
+        <label for="v-token">Presentation token</label>
+        <textarea id="v-token" placeholder="Paste a token, or scan a QR code below"></textarea>
+      </div>
+      <div class="actions">
+        <button class="go" id="v-go">Verify against ledger</button>
+        <button class="go quiet" id="v-offline">Offline check only</button>
+        <button class="go quiet" id="v-scan">Scan QR</button>
+      </div>
+      <div id="scanner"></div>
+      <div id="v-verdict"></div>
+      <ul class="stages" id="v-stages"></ul>
+      <div class="out" id="v-out"></div>
+    </div>
+    <div class="panel">
+      <h2>Reconcile offline acceptances</h2>
+      <p class="lede">A verifier that accepted credentials while offline replays their IDs here once connectivity returns. Anything no longer ACTIVE is flagged as a stale acceptance.</p>
+      <div><label for="s-ids">Credential IDs, one per line</label><textarea id="s-ids" placeholder="cred-..."></textarea></div>
+      <div class="actions"><button class="go" id="s-go">Synchronise</button></div>
+      <div class="out" id="s-out"></div>
+    </div>
+  </section>
+
+  <!-- 5. REVOKE -->
+  <section id="revoke" hidden>
+    <div class="panel">
+      <h2>Revoke a credential</h2>
+      <p class="lede">Restricted to the issuing organisation. The credential is not deleted — its status changes to REVOKED and every later verification rejects it.</p>
+      <div class="grid">
+        <div><label for="x-id">Credential ID</label><input id="x-id" placeholder="cred-..."></div>
+        <div><label for="x-reason">Reason</label><input id="x-reason" value="Superseded by reissued credential"></div>
+      </div>
+      <div class="actions"><button class="go danger" id="x-go">Revoke</button></div>
+      <div class="out" id="x-out"></div>
+    </div>
+  </section>
+
+  <!-- 6. AUDIT -->
+  <section id="audit" hidden>
+    <div class="split">
+      <div class="panel">
+        <h2>Credential history</h2>
+        <p class="lede">Every committed transaction that touched this key, taken from the ledger itself.</p>
+        <div><label for="h-id">Credential ID</label><input id="h-id" placeholder="cred-..."></div>
+        <div class="actions"><button class="go" id="h-go">Read history</button></div>
+        <div class="out" id="h-out"></div>
+      </div>
+      <div class="panel">
+        <h2>Measured performance</h2>
+        <p class="lede">Latencies and transaction counts collected by the backend for the evaluation table.</p>
+        <div class="actions"><button class="go" id="m-go">Refresh metrics</button></div>
+        <div class="out" id="m-out"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+const API = '';
+let token = null, scanner = null, lastCreds = [];
+
+const $ = (id) => document.getElementById(id);
+
+function show(el, data, kind='ok'){
+  el.className = 'out ' + kind;
+  el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+}
+
+async function call(path, { method='GET', body } = {}){
+  const headers = { 'Content-Type':'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(API + path, { method, headers, body: body && JSON.stringify(body) });
+  const data = await res.json().catch(() => ({ error:'Non-JSON response' }));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+function busy(btn, on){ btn.disabled = on; }
+
+async function run(btn, outEl, fn){
+  busy(btn, true);
+  try { const data = await fn(); if (outEl) show(outEl, data, 'ok'); return data; }
+  catch (e) { if (outEl) show(outEl, e.message, 'bad'); }
+  finally { busy(btn, false); }
+}
+
+// tabs
+document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('nav button').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+  document.querySelectorAll('main section').forEach((s) => { s.hidden = s.id !== b.dataset.tab; });
+  if (scanner) { scanner.clear().catch(()=>{}); scanner = null; }
+}));
+
+// auth
+$('login').addEventListener('click', () => run($('login'), null, async () => {
+  const role = $('role').value;
+  const r = await call('/api/login', { method:'POST', body:{ username:'demo', password:'demo', role } });
+  token = r.token;
+  $('session').textContent = `${r.username} · ${r.role}`;
+}));
+
+// register
+$('r-go').addEventListener('click', () => run($('r-go'), $('r-out'), () =>
+  call('/api/identity', { method:'POST', body:{
+    identityId: $('r-id').value.trim(),
+    issuerId:   $('r-iss').value.trim(),
+    personalData: { fullName:$('r-name').value, dateOfBirth:$('r-dob').value, site:$('r-loc').value },
+  }})
+));
+
+// issue
+$('i-go').addEventListener('click', () => run($('i-go'), $('i-out'), async () => {
+  let claims;
+  try { claims = JSON.parse($('i-claims').value); }
+  catch { throw new Error('Claims must be valid JSON'); }
+
+  const r = await call('/api/credential', { method:'POST', body:{
+    holderId: $('i-holder').value.trim(),
+    issuerId: $('i-iss').value.trim(),
+    credentialType: $('i-type').value,
+    claims,
+  }});
+  drawQR('qr', r.presentationToken);
+  $('x-id').value = r.credentialId;
+  $('h-id').value = r.credentialId;
+  $('v-token').value = r.presentationToken;
+  return r;
+}));
+
+function drawQR(elId, text){
+  const el = $(elId);
+  el.innerHTML = '';
+  new QRCode(el, { text, width:230, height:230, correctLevel: QRCode.CorrectLevel.M });
+}
+
+// wallet
+$('w-go').addEventListener('click', () => run($('w-go'), null, async () => {
+  const r = await call(`/api/identity/${encodeURIComponent($('w-holder').value.trim())}/credentials`);
+  lastCreds = r.payload || [];
+  $('w-table').innerHTML = lastCreds.length ? `
+    <table><thead><tr><th>Credential</th><th>Type</th><th>Status</th><th>Issued</th></tr></thead>
+    <tbody>${lastCreds.map((c) => `<tr>
+      <td class="mono">${c.credentialId}</td><td>${c.credentialType}</td>
+      <td>${c.status}</td><td class="mono">${c.issuedAt}</td></tr>`).join('')}
+    </tbody></table>` : '<p class="lede">No credentials for this identity.</p>';
+  show($('w-out'), `${lastCreds.length} credential(s) read from ledger in ${r.latencyMs} ms`, 'ok');
+}));
+
+$('w-present').addEventListener('click', () => run($('w-present'), $('w-out'), async () => {
+  if (!lastCreds.length) throw new Error('Load credentials first');
+  const r = await call(`/api/credential/${encodeURIComponent(lastCreds[0].credentialId)}/present`, { method:'POST' });
+  drawQR('w-qr', r.presentationToken);
+  $('v-token').value = r.presentationToken;
+  return r;
+}));
+
+// verify
+function renderVerdict(r){
+  $('v-verdict').innerHTML =
+    `<div class="verdict ${r.finalResult}">${r.finalResult}
+      <small>${r.ledger?.reason || r.note || r.local?.reason || ''}</small></div>`;
+  $('v-stages').innerHTML = `
+    <li><b>Local check</b><span>${r.local ? r.local.localResult + ' — ' + r.local.reason : 'not performed'}</span></li>
+    <li><b>Ledger check</b><span>${r.ledger ? r.ledger.result + ' — ' + (r.ledger.reason || 'confirmed against Fabric state') : 'not performed (offline)'}</span></li>
+    <li><b>Latency</b><span>${r.verificationLatencyMs != null ? r.verificationLatencyMs + ' ms' : 'n/a'}</span></li>`;
+}
+
+async function doVerify(offlineOnly, btn){
+  const t = $('v-token').value.trim();
+  if (!t) { show($('v-out'), 'Paste or scan a presentation token first.', 'warn'); return; }
+  const r = await run(btn, null, () => call('/api/verify', { method:'POST', body:{ presentationToken:t, offlineOnly } }));
+  if (!r) { $('v-verdict').innerHTML = ''; $('v-stages').innerHTML = ''; return; }
+  renderVerdict(r);
+  show($('v-out'), r, r.finalResult === 'VALID' ? 'ok' : r.finalResult === 'UNCONFIRMED' ? 'warn' : 'bad');
+  const ids = $('s-ids');
+  const cid = r.local?.payload?.cid;
+  if (offlineOnly && cid && !ids.value.includes(cid)) ids.value += (ids.value ? '\n' : '') + cid;
+}
+
+$('v-go').addEventListener('click', () => doVerify(false, $('v-go')));
+$('v-offline').addEventListener('click', () => doVerify(true, $('v-offline')));
+
+$('v-scan').addEventListener('click', async () => {
+  if (scanner) { await scanner.clear(); scanner = null; $('scanner').innerHTML = ''; return; }
+  scanner = new Html5Qrcode('scanner');
+  try {
+    await scanner.start({ facingMode:'environment' }, { fps:10, qrbox:220 }, async (text) => {
+      $('v-token').value = text;
+      await scanner.stop(); await scanner.clear(); scanner = null;
+      doVerify(false, $('v-go'));
+    }, () => {});
+  } catch (e) { show($('v-out'), 'Camera unavailable: ' + e.message, 'bad'); scanner = null; }
+});
+
+// sync
+$('s-go').addEventListener('click', () => run($('s-go'), $('s-out'), async () => {
+  const ids = $('s-ids').value.split('\n').map((s) => s.trim()).filter(Boolean);
+  if (!ids.length) throw new Error('Enter at least one credential ID');
+  const r = await call('/api/sync', { method:'POST', body:{ credentialIds: ids } });
+  if (r.staleAcceptances.length) show($('s-out'), r, 'bad');
+  return r;
+}));
+
+// revoke
+$('x-go').addEventListener('click', () => run($('x-go'), $('x-out'), () =>
+  call(`/api/credential/${encodeURIComponent($('x-id').value.trim())}/revoke`,
+    { method:'POST', body:{ reason: $('x-reason').value } })
+));
+
+// audit
+$('h-go').addEventListener('click', () => run($('h-go'), $('h-out'), () =>
+  call(`/api/credential/${encodeURIComponent($('h-id').value.trim())}/history`)
+));
+$('m-go').addEventListener('click', () => run($('m-go'), $('m-out'), () => call('/api/metrics')));
+</script>
+</body>
+</html>

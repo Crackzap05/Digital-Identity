@@ -1,0 +1,23 @@
+node_modules/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Fabric generated/runtime data
+wallet/
+wallets/
+organizations/
+system-genesis-block/
+channel-artifacts/
+log.txt
+
+# Private keys and certificates
+*.key
+*.pem
+*.p12
+
+# Logs
+*.log
+npm-debug.log*
+mnt/

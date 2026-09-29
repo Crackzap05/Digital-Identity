@@ -1,0 +1,15 @@
+{
+  "name": "identity-chaincode",
+  "version": "1.0.0",
+  "description": "Digital identity + credential lifecycle chaincode for Hyperledger Fabric 2.x",
+  "main": "index.js",
+  "engines": { "node": ">=16" },
+  "scripts": {
+    "start": "fabric-chaincode-node start",
+    "test": "node ../../tests/unit.test.js"
+  },
+  "dependencies": {
+    "fabric-contract-api": "^2.5.4",
+    "fabric-shim": "^2.5.4"
+  }
+}
