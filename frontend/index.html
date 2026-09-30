@@ -88,6 +88,18 @@
   #qr{display:flex; justify-content:center; padding:20px; background:#fff; border:1px solid var(--rule); border-radius:4px; margin-top:16px}
   #qr:empty{display:none}
   #scanner{max-width:340px; margin-top:16px}
+
+  .approval-banner{
+    margin:20px 0 0;
+    padding:16px 20px;
+    background:#e1ece7;
+    border:2px solid #1d5d4e;
+    border-radius:4px;
+    color:#1d5d4e;
+    font:600 24px/1.2 "IBM Plex Sans",sans-serif;
+    text-align:center;
+    letter-spacing:.04em;
+  }
   .bar{
     display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:13px;
     color:var(--muted); border-top:1px solid var(--rule); padding-top:14px; margin-top:6px;
@@ -109,6 +121,7 @@
 <header><div class="wrap">
   <h1>Credential Desk</h1>
   <p>Registration, issuance, presentation, verification and revocation against a permissioned Hyperledger Fabric ledger.</p>
+  <div class="approval-banner">REQUEST APPROVED</div>
   <nav role="tablist">
     <button role="tab" data-tab="register" aria-selected="true">Register</button>
     <button role="tab" data-tab="issue" aria-selected="false">Issue</button>
