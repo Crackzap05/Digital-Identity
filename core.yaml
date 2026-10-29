@@ -1,0 +1,20 @@
+peer:
+  address: localhost:7051
+  tls:
+    enabled: true
+    cert:
+      file: /tmp/dummy.crt
+      key:
+        file: /tmp/dummy-key.pem
+    rootcert:
+      file: /tmp/dummy-ca.crt
+  msp:
+    id: Org1MSP
+    mspPath: /tmp/dummy-msp
+  bccsp:
+    default: SW
+    sw:
+      hash: SHA2
+      security: 256
+      filekeystore:
+        keystore: /tmp/dummy-msp/keystore

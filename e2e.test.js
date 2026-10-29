@@ -11,7 +11,7 @@
  *   BASE_URL=http://localhost:3000 node tests/e2e.test.js
  */
 
-const BASE = process.env.BASE_URL || 'http://localhost:3000';
+const BASE = process.env.BASE_URL || 'http://127.0.0.1:3000';
 const stamp = Date.now();
 const HOLDER = `holder-${stamp}`;
 const ISSUER = 'ngo-alpha';

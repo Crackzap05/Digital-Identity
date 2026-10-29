@@ -21,3 +21,13 @@ log.txt
 *.log
 npm-debug.log*
 mnt/
+
+# Local identity and runtime data
+backend/data/
+backend/config/keys/
+
+# Temporary backups and diagnostics
+*.bak
+*.bak2
+*.before-approval-fix
+fabricService_diagnostic.js

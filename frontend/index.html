@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Credential Desk — Permissioned Digital Identity</title>
+<title>Credential Desk — DEMO MODE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -100,6 +100,17 @@
     text-align:center;
     letter-spacing:.04em;
   }
+  .demo-notice{
+    margin:14px 0 0;
+    padding:12px 18px;
+    background:#fff8e1;
+    border:1px solid #f9a825;
+    border-radius:4px;
+    color:#5d4037;
+    font:400 13px/1.5 "IBM Plex Sans",sans-serif;
+    text-align:center;
+  }
+  .demo-notice strong{color:#e65100}
   .bar{
     display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:13px;
     color:var(--muted); border-top:1px solid var(--rule); padding-top:14px; margin-top:6px;
@@ -120,8 +131,14 @@
 
 <header><div class="wrap">
   <h1>Credential Desk</h1>
-  <p>Registration, issuance, presentation, verification and revocation against a permissioned Hyperledger Fabric ledger.</p>
-  <div class="approval-banner">REQUEST APPROVED</div>
+  <p>Registration, issuance, presentation, verification and revocation.</p>
+  <div class="approval-banner" id="approvalBanner" hidden>REQUEST APPROVED</div>
+  <div class="demo-notice">
+    <strong>This server is running in DEMO MODE.</strong>
+    All actions are resolved by this server's own persistent store. Nothing is being written
+    to Hyperledger Fabric right now, and demo operations do not produce Fabric transaction IDs,
+    block numbers, or on-chain status.
+  </div>
   <nav role="tablist">
     <button role="tab" data-tab="register" aria-selected="true">Register</button>
     <button role="tab" data-tab="issue" aria-selected="false">Issue</button>
@@ -149,7 +166,7 @@
   <section id="register">
     <div class="panel">
       <h2>Register an identity</h2>
-      <p class="lede">The issuer verifies the applicant's information out of band, then commits only a SHA-256 digest of it to the ledger. The fields below stay in the off-chain store.</p>
+      <p class="lede">The issuer verifies the applicant's information out of band, then commits only a SHA-256 digest of it to the store. The fields below stay off-chain.</p>
       <div class="grid">
         <div><label for="r-id">Identity ID</label><input id="r-id" value="holder-001"></div>
         <div><label for="r-iss">Issuer ID</label><input id="r-iss" value="ngo-alpha"></div>
@@ -157,7 +174,7 @@
         <div><label for="r-dob">Date of birth <em>(off-chain)</em></label><input id="r-dob" type="date" value="1994-03-11"></div>
         <div><label for="r-loc">Registration site <em>(off-chain)</em></label><input id="r-loc" value="Camp 4, Cox's Bazar"></div>
       </div>
-      <div class="actions"><button class="go" id="r-go">Register on ledger</button></div>
+      <div class="actions"><button class="go" id="r-go">Register</button></div>
       <div class="out" id="r-out"></div>
     </div>
   </section>
@@ -166,7 +183,7 @@
   <section id="issue" hidden>
     <div class="panel">
       <h2>Issue a credential</h2>
-      <p class="lede">Creates a signed credential, records its hash and ACTIVE status on-chain, and returns a short-lived QR presentation token.</p>
+      <p class="lede">Creates a signed credential, records its hash and ACTIVE status in the store, and returns a short-lived QR presentation token.</p>
       <div class="grid">
         <div><label for="i-holder">Holder ID</label><input id="i-holder" value="holder-001"></div>
         <div><label for="i-iss">Issuer ID</label><input id="i-iss" value="ngo-alpha"></div>
@@ -178,7 +195,7 @@
         </div>
       </div>
       <div style="margin-top:14px">
-        <label for="i-claims">Claims <em>(off-chain body; only its hash is written to the ledger)</em></label>
+        <label for="i-claims">Claims <em>(off-chain body; only its hash is stored)</em></label>
         <textarea id="i-claims">{ "nationality": "MM", "familySize": 4, "validUntil": "2027-12-31" }</textarea>
       </div>
       <div class="actions"><button class="go" id="i-go">Issue credential</button></div>
@@ -191,7 +208,7 @@
   <section id="wallet" hidden>
     <div class="panel">
       <h2>Holder wallet</h2>
-      <p class="lede">Credentials held by this identity, read back from the ledger. Regenerating a presentation mints a fresh token that expires in five minutes.</p>
+      <p class="lede">Credentials held by this identity, read back from the store. Regenerating a presentation mints a fresh token that expires in five minutes.</p>
       <div class="grid">
         <div><label for="w-holder">Holder ID</label><input id="w-holder" value="holder-001"></div>
       </div>
@@ -209,13 +226,13 @@
   <section id="verify" hidden>
     <div class="panel">
       <h2>Verify a presentation</h2>
-      <p class="lede">Two independent checks. The local check proves the issuer's signature and works without connectivity. Only the ledger check can see a revocation.</p>
+      <p class="lede">Two independent checks. The local check proves the issuer's signature and works without connectivity. The store check can see a revocation.</p>
       <div>
         <label for="v-token">Presentation token</label>
         <textarea id="v-token" placeholder="Paste a token, or scan a QR code below"></textarea>
       </div>
       <div class="actions">
-        <button class="go" id="v-go">Verify against ledger</button>
+        <button class="go" id="v-go">Verify against store</button>
         <button class="go quiet" id="v-offline">Offline check only</button>
         <button class="go quiet" id="v-scan">Scan QR</button>
       </div>
@@ -252,7 +269,7 @@
     <div class="split">
       <div class="panel">
         <h2>Credential history</h2>
-        <p class="lede">Every committed transaction that touched this key, taken from the ledger itself.</p>
+        <p class="lede">Every stored action that touched this credential, taken from the store's own audit log.</p>
         <div><label for="h-id">Credential ID</label><input id="h-id" placeholder="cred-..."></div>
         <div class="actions"><button class="go" id="h-go">Read history</button></div>
         <div class="out" id="h-out"></div>
@@ -269,7 +286,7 @@
 </main>
 
 <script>
-const API = '';
+const API = 'http://localhost:3000';
 let token = null, scanner = null, lastCreds = [];
 
 const $ = (id) => document.getElementById(id);
@@ -313,13 +330,26 @@ $('login').addEventListener('click', () => run($('login'), null, async () => {
 }));
 
 // register
-$('r-go').addEventListener('click', () => run($('r-go'), $('r-out'), () =>
-  call('/api/identity', { method:'POST', body:{
-    identityId: $('r-id').value.trim(),
-    issuerId:   $('r-iss').value.trim(),
-    personalData: { fullName:$('r-name').value, dateOfBirth:$('r-dob').value, site:$('r-loc').value },
-  }})
-));
+
+$('r-go').addEventListener('click', async () => {
+  const banner = $('approvalBanner');
+  if (banner) banner.hidden = true;
+
+  await run($('r-go'), $('r-out'), async () => {
+    const result = await call('/api/identity', { method:'POST', body:{
+      identityId: $('r-id').value.trim(),
+      issuerId: $('r-iss').value.trim(),
+      personalData: {
+        fullName: $('r-name').value,
+        dateOfBirth: $('r-dob').value,
+        site: $('r-loc').value
+      },
+    }});
+
+    if (banner) banner.hidden = false;
+    return result;
+  });
+});
 
 // issue
 $('i-go').addEventListener('click', () => run($('i-go'), $('i-out'), async () => {
@@ -356,7 +386,7 @@ $('w-go').addEventListener('click', () => run($('w-go'), null, async () => {
       <td class="mono">${c.credentialId}</td><td>${c.credentialType}</td>
       <td>${c.status}</td><td class="mono">${c.issuedAt}</td></tr>`).join('')}
     </tbody></table>` : '<p class="lede">No credentials for this identity.</p>';
-  show($('w-out'), `${lastCreds.length} credential(s) read from ledger in ${r.latencyMs} ms`, 'ok');
+  show($('w-out'), `${lastCreds.length} credential(s) read from store in ${r.latencyMs} ms`, 'ok');
 }));
 
 $('w-present').addEventListener('click', () => run($('w-present'), $('w-out'), async () => {
@@ -374,7 +404,7 @@ function renderVerdict(r){
       <small>${r.ledger?.reason || r.note || r.local?.reason || ''}</small></div>`;
   $('v-stages').innerHTML = `
     <li><b>Local check</b><span>${r.local ? r.local.localResult + ' — ' + r.local.reason : 'not performed'}</span></li>
-    <li><b>Ledger check</b><span>${r.ledger ? r.ledger.result + ' — ' + (r.ledger.reason || 'confirmed against Fabric state') : 'not performed (offline)'}</span></li>
+    <li><b>Store check</b><span>${r.ledger ? r.ledger.result + ' — ' + (r.ledger.reason || 'confirmed against stored state') : 'not performed (offline)'}</span></li>
     <li><b>Latency</b><span>${r.verificationLatencyMs != null ? r.verificationLatencyMs + ' ms' : 'n/a'}</span></li>`;
 }
 

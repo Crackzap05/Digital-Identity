@@ -29,9 +29,23 @@ async function newGrpcConnection() {
   });
 }
 
-/** Idempotent: safe to call from every request handler. */
+/** Idempotent: safe to call from every request handler. */async function canConnectToFabric() {
+  try {
+    await fs.access(config.tlsCertPath);
+    await fs.access(config.certPath);
+    await fs.access(config.keyDirectoryPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function getContract() {
   if (contract) return contract;
+
+  if (!(await canConnectToFabric())) {
+    throw new Error('Fabric identity files not found — skipping Fabric connection');
+  }
 
   client = await newGrpcConnection();
 
